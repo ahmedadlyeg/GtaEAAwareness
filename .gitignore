@@ -1,0 +1,29 @@
+# Dependencies
+node_modules/
+
+# Secrets / environment
+.env
+.env.*
+!.env.example
+!.env.production.example
+
+# SQLite database and write-ahead-log sidecars
+server/data/
+*.db
+*.db-wal
+*.db-shm
+
+# Logs
+*.log
+logs/
+npm-debug.log*
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# Build / temp
+dist/
+tmp/
