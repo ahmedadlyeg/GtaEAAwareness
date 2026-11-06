@@ -7,6 +7,7 @@
   var CONTENT = window.EA_CONTENT, QUIZ = window.EA_QUIZ, TOG = window.TOGAF || {}, KB = window.KB_ARTICLES || [];
   var state = { user: null, progress: null, hb: null };
   var app = document.getElementById("app");
+  var nonitLang = (function () { try { return localStorage.getItem("eahub.nonit.lang") === "ar" ? "ar" : "en"; } catch (e) { return "en"; } })();
 
   // the TOGAF section counts as a (mandatory) module for progress and sign-off
   var TOGAF_MOD = { id: "togaf", n: "T", title: "TOGAF deep dive", short: "TOGAF deep dive", mandatory: true, virtual: true };
@@ -32,6 +33,7 @@
     search: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>',
     award: '<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="9" r="6"/><path d="M8.5 13.7L7 22l5-3 5 3-1.5-8.3"/></svg>',
     lock: '<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>',
+    briefcase: '<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M3 12h18"/></svg>',
     arrow: "→"
   };
 
@@ -84,7 +86,7 @@
   function isAdmin() { return state.user && (state.user.role === "admin" || state.user.role === "ea_team"); }
 
   /* ---------------- shell ---------------- */
-  var NAV = [["home", "Home", "home"], ["ea", "EA Foundations", "layers"], ["togaf", "TOGAF", "cycle"], ["kb", "Knowledge Base", "book"], ["cert", "Certification path", "award"], ["signoff", "Sign-off", "pen"], ["dashboard", "Dashboard", "chart"]];
+  var NAV = [["home", "Home", "home"], ["nonit", "EA for Non-IT", "briefcase"], ["ea", "EA Foundations", "layers"], ["togaf", "TOGAF", "cycle"], ["kb", "Knowledge Base", "book"], ["cert", "Certification path", "award"], ["signoff", "Sign-off", "pen"], ["dashboard", "Dashboard", "chart"]];
   function shell(active, inner) {
     var u = state.user;
     var nav = NAV.filter(function (n) { return n[0] !== "dashboard" || isAdmin(); }).map(function (n) {
@@ -295,6 +297,66 @@
       '<section class="section" style="padding-top:0"><div class="wrap"><div class="sec-h"><div><div class="eyebrow">From the knowledge base</div><h2>Start with these</h2><div class="rule"></div></div><a class="btn btn-line" href="#/kb">All ' + KB.length + " articles " + ICON.arrow + '</a></div><div class="grid g3">' +
       KB.filter(function (a) { return a.cat === "Templates & Checklists"; }).slice(0, 3).concat(KB.filter(function (a) { return a.cat === "TOGAF"; }).slice(0, 3)).map(function (a) { return kbCard(a); }).join("") + "</div></div></section>";
     mount("home", html);
+  }
+
+  /* ---------------- EA for Non-IT (bilingual) ---------------- */
+  function viewNonIT() {
+    var D = window.EA_NONIT || {};
+    var d = D[nonitLang] || D.en;
+    if (!d) { mount("nonit", '<section class="section"><div class="wrap"><p>Content unavailable.</p></div></section>'); return; }
+    var rtl = d.dir === "rtl";
+    document.title = (rtl ? "البنية المؤسسية لغير المختصين" : "EA for Non-IT") + " · EA Awareness Hub";
+    var exLabel = rtl ? "أمثلة" : "Examples";
+    var openLabel = "↗";
+    function card(t, dsc) {
+      return '<div class="card" style="padding:22px"><h3 style="font-size:18.5px;margin-bottom:8px">' + esc(t) + '</h3><p class="muted" style="font-size:15.5px;line-height:1.65">' + esc(dsc) + "</p></div>";
+    }
+    function kpis(arr, color) {
+      return '<div style="display:flex;gap:22px;margin-top:16px;flex-wrap:wrap">' + arr.map(function (k) {
+        return '<div><div style="font-size:25px;font-weight:800;color:' + color + ';line-height:1.1">' + esc(k[0]) + '</div><div style="font-size:12.5px;color:#6B6570;margin-top:3px">' + esc(k[1]) + "</div></div>";
+      }).join("") + "</div>";
+    }
+    function secH(h, lead) {
+      return '<div class="sec-h"><div><h2>' + esc(h) + '</h2><div class="rule"></div></div>' + (lead ? "<p>" + esc(lead) + "</p>" : "") + "</div>";
+    }
+    var ex = d.example;
+    var html =
+      '<div class="nonit" dir="' + d.dir + '" lang="' + d.lang + '">' +
+      phead(esc(d.eyebrow), esc(d.title), esc(d.sub), '<button class="btn btn-line" id="nonit-lang" type="button">' + esc(d.otherLabel) + "</button>") +
+      // What EA is
+      '<section class="section"><div class="wrap">' + secH(d.what.h) +
+      '<div style="max-width:900px;display:grid;gap:14px">' + d.what.paras.map(function (p) { return '<p style="font-size:17px;line-height:1.72;color:#39333F">' + esc(p) + "</p>"; }).join("") + "</div></div></section>" +
+      // Why it matters
+      '<section class="section" style="padding-top:0"><div class="wrap">' + secH(d.why.h, d.why.lead) +
+      '<div class="grid g3">' + d.why.items.map(function (i) { return card(i.t, i.d); }).join("") + "</div></div></section>" +
+      // Building blocks
+      '<section class="section" style="padding-top:0"><div class="wrap">' + secH(d.components.h, d.components.lead) +
+      '<div style="display:grid;gap:12px;max-width:940px">' + d.components.layers.map(function (l) {
+        return '<div class="card" style="padding:18px 22px;border-' + (rtl ? "right" : "left") + ':6px solid ' + l.c + '">' +
+          '<div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap"><span style="font-weight:800;font-size:18px">' + esc(l.name) + '</span><span class="eyebrow" style="color:' + l.c + '">' + esc(l.q) + "</span></div>" +
+          '<p class="muted" style="margin-top:7px;font-size:15.5px;line-height:1.6">' + esc(l.plain) + "</p>" +
+          '<p style="margin-top:8px;font-size:14.5px;color:#6B6570"><b>' + exLabel + ":</b> " + esc(l.ex) + "</p></div>";
+      }).join("") + "</div></div></section>" +
+      // Worked example
+      '<section class="section" style="padding-top:0"><div class="wrap">' + secH(ex.h, ex.lead) +
+      '<div class="grid g2">' +
+      '<div class="card" style="padding:24px;border-top:4px solid #2E8B57"><div class="eyebrow" style="color:#2E8B57">' + esc(ex.withTitle) + '</div><p style="margin-top:9px;font-size:15.5px;line-height:1.65">' + esc(ex.withText) + "</p>" + kpis(ex.withKpis, "#2E8B57") + "</div>" +
+      '<div class="card" style="padding:24px;border-top:4px solid #C24A2C"><div class="eyebrow" style="color:#C24A2C">' + esc(ex.withoutTitle) + '</div><p style="margin-top:9px;font-size:15.5px;line-height:1.65">' + esc(ex.withoutText) + "</p>" + kpis(ex.withoutKpis, "#C24A2C") + "</div>" +
+      "</div>" +
+      '<div class="strip" style="margin-top:18px;background:#33091F;border-radius:14px"><div class="in" style="padding:22px 26px"><p style="font-size:17px;line-height:1.6;color:#fff;margin:0">' + esc(ex.close) + "</p>" +
+      '<a class="btn btn-gold btn-sm" style="margin-top:14px" href="' + esc(d.slide.url) + '" target="_blank" rel="noopener">' + esc(d.slide.text) + " " + openLabel + "</a></div></div></div></section>" +
+      // How executives realise the benefit
+      '<section class="section" style="padding-top:0"><div class="wrap">' + secH(d.realize.h) +
+      '<div class="grid g2">' + d.realize.items.map(function (i) { return card(i.t, i.d); }).join("") + "</div></div></section>" +
+      "</div>";
+    mount("nonit", html, function () {
+      var b = $("#nonit-lang");
+      if (b) b.onclick = function () {
+        nonitLang = d.other;
+        try { localStorage.setItem("eahub.nonit.lang", nonitLang); } catch (e) {}
+        viewNonIT();
+      };
+    });
   }
 
   /* ---------------- EA modules ---------------- */
@@ -1000,6 +1062,7 @@
     if (s[0] === "login") { location.hash = "#/home"; return; }
     refreshProgress().then(function () {
       switch (s[0]) {
+        case "nonit": viewNonIT(); break;
         case "ea": viewEA(s[1] || LEARN[0].id); break;
         case "togaf": viewTogaf(); break;
         case "kb": if (s[1]) viewKBArticle(s[1]); else viewKB(r.q); break;
