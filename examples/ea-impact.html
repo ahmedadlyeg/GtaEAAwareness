@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EA Impact Analysis</title>
+<style>
+/* Self-hosted fonts (CSP-friendly): Tajawal + GTA Lusail (where installed) replace Google IBM Plex. */
+@font-face{font-family:"Tajawal";src:url("../fonts/Tajawal-Regular.ttf") format("truetype");font-weight:400;font-display:swap}
+@font-face{font-family:"Tajawal";src:url("../fonts/Tajawal-Bold.ttf") format("truetype");font-weight:700;font-display:swap}
+@font-face{font-family:"Tajawal";src:url("../fonts/Tajawal-ExtraBold.ttf") format("truetype");font-weight:800;font-display:swap}
+/* Layout idea: one 16:9 canvas (1920x1080) scaled to fit, with two tabs.
+   "Without EA": the same building blocks scattered in silos with tangled links; the search wanders.
+   "With EA": six ArchiMate layer bands on a 6-column grid; the impact flows down cleanly. Arabic mirrors everything. */
+:root{
+  --bg:#F3F5F8; --ink:#1C2433; --muted:#566074; --line:#9AA5B4;
+  --impact:#E0482A; --impact-soft:#FDE9E4; --miss:#C98500; --miss-soft:#FFF4DA; --dead:#6F7A8C; --frame:#151B26;
+  --font-body:"Tajawal","Segoe UI",Arial,sans-serif;
+  --font-cond:"Tajawal","Arial Narrow",Arial,sans-serif;
+  color-scheme: light;
+}
+html[lang="ar"]{--font-body:"Lusail","Tajawal","Segoe UI",Tahoma,sans-serif;--font-cond:"Lusail","Tajawal","Segoe UI",Tahoma,sans-serif}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:var(--frame);overflow:hidden;font-family:var(--font-body);color:var(--ink)}
+#stage{position:absolute;left:0;top:0;width:1920px;height:1080px;background:var(--bg);transform-origin:0 0;overflow:hidden;cursor:pointer;user-select:none;font-family:var(--font-body)}
+html[lang="ar"] .caps{letter-spacing:0!important;text-transform:none!important}
+.view{position:absolute;inset:0;pointer-events:none}
+.hide{display:none!important}
+
+/* header */
+.topbar{position:absolute;left:56px;top:22px;display:flex;align-items:center;gap:26px}
+html[dir="rtl"] .topbar{left:auto;right:56px}
+.tabs{display:flex;gap:8px;padding:5px;border-radius:14px;background:#E3E8EF}
+.tab{display:flex;align-items:center;gap:10px;height:46px;padding:0 20px;border:none;border-radius:10px;background:transparent;color:var(--muted);font:600 19px/1 var(--font-body);cursor:pointer}
+.tab svg{width:26px;height:26px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.tab .ic-no{color:#C2412A}.tab .ic-yes{color:#2E8B57}
+.tab[aria-selected="true"]{background:var(--ink);color:#fff;box-shadow:0 2px 6px rgba(20,30,50,.25)}
+.tab[aria-selected="true"] .ic-no{color:#FF8A6B}.tab[aria-selected="true"] .ic-yes{color:#7DDBA6}
+.eyebrow{font:600 17px/1.2 var(--font-cond);letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+h1{position:absolute;left:56px;top:90px;width:1400px;font:700 44px/1.15 var(--font-body);letter-spacing:-.01em;white-space:nowrap}
+h1 span{color:var(--impact)}
+.hctrl{position:absolute;right:56px;top:27px;width:384px;display:flex;gap:14px;height:46px}
+html[dir="rtl"] h1{left:auto;right:56px}
+html[dir="rtl"] .hctrl{right:auto;left:56px}
+html[lang="ar"] h1{letter-spacing:0}
+.chip{flex:1;display:flex;align-items:center;justify-content:center;border-radius:999px;font:700 17px/1 var(--font-cond);letter-spacing:.05em;white-space:nowrap;text-transform:uppercase;background:#E3E8EF;color:var(--ink);transition:background .4s,color .4s}
+.chip.live{background:var(--impact);color:#fff}
+.chip.done{background:var(--ink);color:#fff}
+.chip.warn{background:var(--miss);color:#fff}
+.langbtn{flex:none;width:120px;border-radius:999px;border:2px solid var(--ink);background:#fff;color:var(--ink);font:700 18px/1 "Lusail","Tajawal",sans-serif;cursor:pointer}
+.langbtn:hover{background:var(--ink);color:#fff}
+
+/* layer bands (with EA) */
+.band{position:absolute;width:1400px;height:126px;border-radius:14px}
+.band .lbl{position:absolute;left:0;top:0;width:204px;height:126px;padding:20px 16px 0 24px;border-left:8px solid var(--c);border-radius:14px 0 0 14px}
+html[dir="rtl"] .band .lbl{left:auto;right:0;padding:18px 24px 0 16px;border-left:none;border-right:8px solid var(--c);border-radius:0 14px 14px 0}
+.band .lbl b{display:block;font:700 22px/1.12 var(--font-body)}
+.band .lbl small{display:block;margin-top:6px;font:500 16px/1.25 var(--font-body);color:var(--muted)}
+.band.active{box-shadow:0 0 0 3px var(--impact) inset}
+
+/* silos (without EA) */
+.silo{position:absolute;border:2px dashed #AEB7C5;border-radius:14px;background:rgba(255,255,255,.5)}
+.silo .sh{height:40px;display:flex;align-items:center;gap:8px;padding:0 14px;font:600 16px/1.1 var(--font-body);color:var(--muted);white-space:nowrap}
+.silo .sh svg{flex:none;width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.silo.active{border-color:var(--impact);border-style:solid;background:rgba(253,233,228,.45)}
+.sticky{position:absolute;width:210px;padding:12px 14px;background:#FFF3A8;box-shadow:0 4px 10px rgba(20,30,50,.15);font:600 17px/1.25 var(--font-body);color:#5A4A00}
+
+/* building blocks */
+.blk{position:absolute;width:182px;height:86px;padding:9px 12px 0;background:#fff;border-radius:10px;border:1.5px solid #D5DBE3;border-top:5px solid var(--c);box-shadow:0 1px 2px rgba(20,30,50,.06);transition:opacity .5s,transform .45s cubic-bezier(.2,.9,.3,1.3),border-color .3s,box-shadow .3s,background .3s}
+.blk.sm{width:170px;height:70px;padding:7px 10px 0}
+.blk .tp{display:block;font:600 14px/1.1 var(--font-cond);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.blk.sm .tp{font-size:13px}
+.blk .nm{display:block;margin-top:5px;font:600 18px/1.16 var(--font-body);text-wrap:balance}
+.blk.sm .nm{margin-top:3px;font-size:16px;line-height:1.14}
+html[lang="ar"] .blk{padding-top:7px}
+html[lang="ar"] .blk .nm{margin-top:3px;font-size:17px;line-height:1.3}
+html[lang="ar"] .blk.sm .nm{font-size:15px;line-height:1.25;margin-top:1px}
+.blk .badge{position:absolute;right:8px;top:-14px;display:none;padding:4px 9px;border-radius:999px;font:700 13px/1 var(--font-cond);letter-spacing:.1em;color:#fff;background:var(--impact);white-space:nowrap}
+html[dir="rtl"] .blk .badge{right:auto;left:8px}
+.blk.isnew{opacity:0;transform:scale(.6) translateY(-30px)}
+.blk.isnew.show{opacity:1;transform:none;border:2.5px dashed var(--impact);border-top:5px solid var(--impact);background:var(--impact-soft)}
+.blk.isnew.show .badge{display:block}
+.blk.isnew.show .badge::after{content:attr(data-new)}
+.blk.hit{border:2.5px solid var(--impact);border-top:5px solid var(--impact);box-shadow:0 0 0 6px rgba(224,72,42,.16),0 6px 18px rgba(224,72,42,.25);transform:translateY(-2px)}
+.blk.hit .badge{display:block}
+.blk.hit .badge::after{content:attr(data-hit)}
+.blk.dead{border:2.5px dashed var(--dead);border-top:5px solid var(--dead);background:#EEF0F3}
+.blk.dead .badge{display:block;background:var(--dead)}
+.blk.dead .badge::after{content:attr(data-dead)}
+.blk.missed{border:2.5px dashed var(--miss);border-top:5px solid var(--miss);background:var(--miss-soft);box-shadow:0 0 0 5px rgba(201,133,0,.15)}
+.blk.missed .badge{display:block;background:var(--miss)}
+.blk.missed .badge::after{content:attr(data-miss)}
+.blk.pulse::before{content:"";position:absolute;inset:-6px;border-radius:14px;border:3px solid var(--impact);animation:ring .9s ease-out forwards;pointer-events:none}
+.blk.dead.pulse::before{border-color:var(--dead)}
+@keyframes ring{from{opacity:.9;transform:scale(1)}to{opacity:0;transform:scale(1.18)}}
+#stage.changing .blk:not(.hit):not(.isnew):not(.dead):not(.missed){opacity:.42}
+#stage.changing .faint{opacity:.3}
+.noanim .blk{transition:none!important}
+
+/* connectors */
+svg.links{position:absolute;left:0;top:0;width:1920px;height:1080px;pointer-events:none;overflow:visible}
+.faint{transition:opacity .5s}
+.faint path{fill:none;stroke:var(--line);stroke-width:1.6;stroke-dasharray:5 5}
+.spag path{fill:none;stroke:#8E99AB;stroke-width:1.5;opacity:.6}
+.spag circle{fill:#fff;stroke:#8E99AB;stroke-width:1.5}
+.spag text{font:700 14px/1 "Tajawal",sans-serif;fill:#6F7A8C;text-anchor:middle;dominant-baseline:central}
+.hot path{fill:none;stroke:var(--impact);stroke-width:3.5;stroke-linecap:round}
+.hot.search path{stroke-width:3;opacity:.85}
+
+/* narration bar */
+.narr{position:absolute;left:56px;top:984px;width:1400px;height:72px;border-radius:12px;background:var(--ink);color:#fff;display:flex;align-items:center;gap:18px;padding:0 22px}
+html[dir="rtl"] .narr{left:464px}
+.narr .step{flex:none;padding:7px 12px;border-radius:999px;background:#3A4458;font:700 16px/1 var(--font-cond);letter-spacing:.1em;text-transform:uppercase;transition:background .3s}
+.narr.live .step{background:var(--impact)}
+.narr .txt{font:500 21px/1.25 var(--font-body);transition:opacity .25s}
+.narr .txt b{color:#FFB39F}
+
+/* side panel */
+.panel{position:absolute;left:1480px;top:176px;width:384px;height:880px;background:#fff;border:1.5px solid #D5DBE3;border-radius:16px;padding:24px 24px 20px;display:flex;flex-direction:column;gap:14px;cursor:default}
+html[dir="rtl"] .panel{left:56px}
+.panel h3{font:700 26px/1.1 var(--font-body)}
+.panel .intro{font:400 18px/1.45 var(--font-body);color:var(--muted)}
+.legend{display:grid;grid-template-columns:1fr 1fr;gap:10px 12px;font:500 16px/1.2 var(--font-body)}
+.legend span{display:flex;align-items:center;gap:10px}
+.legend i{flex:none;width:34px;height:20px;border-radius:5px;background:#fff;border:1.5px solid #D5DBE3}
+.legend i.h{border:2.5px solid var(--impact);box-shadow:0 0 0 3px rgba(224,72,42,.16)}
+.legend i.n{border:2.5px dashed var(--impact);background:var(--impact-soft)}
+.legend i.d{border:2.5px dashed var(--dead);background:#EEF0F3}
+.legend i.m{border:2.5px dashed var(--miss);background:var(--miss-soft)}
+.legend i.a{border:none;background:radial-gradient(circle,var(--impact) 0 5px,rgba(224,72,42,.25) 6px 10px,transparent 11px)}
+ol.log{list-style:none;display:flex;flex-direction:column;gap:8px;flex:1;min-height:0}
+ol.log li{display:grid;grid-template-columns:10px 1fr auto;column-gap:12px;align-items:center;padding:8px 12px;border-radius:10px;background:#F6F7FA}
+ol.log li.anim{animation:slidein .45s ease-out}
+ol.log li i{width:10px;height:100%;min-height:36px;border-radius:4px;background:var(--c)}
+ol.log li b{display:block;font:700 16px/1.15 var(--font-cond);letter-spacing:.06em;text-transform:uppercase}
+ol.log li span{display:block;margin-top:2px;font:400 16px/1.3 var(--font-body);color:var(--muted)}
+ol.log li em{font:700 30px/1 "Tajawal",sans-serif;font-style:normal;color:var(--impact);font-variant-numeric:tabular-nums;white-space:nowrap}
+ol.log li em.t{font:700 17px/1 var(--font-body);color:var(--miss)}
+@keyframes slidein{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+.totals{display:none;grid-template-columns:repeat(3,1fr);gap:8px;padding:14px 10px;border-radius:12px;background:var(--ink);color:#fff}
+.totals.show{display:grid}
+.totals div{text-align:center}
+.totals strong{display:block;font:700 42px/1 "Tajawal",sans-serif;font-variant-numeric:tabular-nums}
+.totals small{display:block;margin-top:4px;font:500 14px/1.2 var(--font-body);color:#C9D0DC}
+.totals.bad strong.m{color:#FFC861}
+.ctrls{display:flex;gap:10px}
+.ctrls button{flex:1;padding:13px 8px;border-radius:10px;border:1.5px solid var(--ink);background:#fff;color:var(--ink);font:600 17px/1 var(--font-body);cursor:pointer}
+.ctrls button.primary{background:var(--impact);border-color:var(--impact);color:#fff}
+.ctrls button.sq{flex:0 0 72px;font-size:22px}
+.ctrls button:disabled{opacity:.4;cursor:default}
+button:focus-visible{outline:3px solid #2F6FEB;outline-offset:2px}
+.hint{font:400 14px/1.3 var(--font-body);color:var(--muted);text-align:center}
+@media (prefers-reduced-motion: reduce){.blk{transition:none}.blk.pulse::before{animation:none}}
+</style>
+</head>
+<body>
+<div id="stage" aria-label="Enterprise architecture impact analysis slide">
+  <div class="topbar">
+    <div class="tabs" role="tablist">
+      <button class="tab" role="tab" id="tabWithout" type="button">
+        <svg class="ic-no" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 13c2-7 6 6 9-1s5 5 9-3"/><path d="M4 6c5 1 3 10 8 9s4-9 9-7"/><path d="M5 19c3-4 6 2 9-2s4 1 6 0"/></svg>
+        <span id="tabWithoutL"></span>
+      </button>
+      <button class="tab" role="tab" id="tabWith" type="button">
+        <svg class="ic-yes" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l9 4.5-9 4.5-9-4.5z"/><path d="M3 12l9 4.5 9-4.5"/><path d="M3 16.5l9 4.5 9-4.5"/></svg>
+        <span id="tabWithL"></span>
+      </button>
+    </div>
+    <div class="eyebrow caps" id="eyebrow"></div>
+  </div>
+  <h1 id="title"></h1>
+  <div class="hctrl">
+    <div class="chip caps" id="chip"></div>
+    <button class="langbtn" id="langBtn" type="button"></button>
+  </div>
+
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+      <defs>
+        <marker id="ahF" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#9AA5B4"/></marker>
+        <marker id="ahH" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#E0482A"/></marker>
+        <filter id="glow" x="-100%" y="-100%" width="300%" height="300%"><feGaussianBlur stdDeviation="4"/></filter>
+      </defs>
+  </svg>
+  <!-- WITH EA -->
+  <div class="view" id="vWith">
+    <div id="bands"></div>
+    <svg class="links" viewBox="0 0 1920 1080" aria-hidden="true">
+      <g class="faint" id="faintW"></g>
+      <g class="hot" id="hotW"></g>
+      <g id="anchW"></g>
+    </svg>
+    <div id="blocksW"></div>
+  </div>
+
+  <!-- WITHOUT EA -->
+  <div class="view" id="vWithout">
+    <div id="silos"></div>
+    <svg class="links" viewBox="0 0 1920 1080" aria-hidden="true">
+      <g class="spag faint" id="spagN"></g>
+      <g class="hot search" id="hotN"></g>
+    </svg>
+    <div id="blocksN"></div>
+    <svg class="links" viewBox="0 0 1920 1080" aria-hidden="true"><g id="anchN"></g></svg>
+  </div>
+
+  <div class="narr" id="narr"><span class="step caps" id="stepPill"></span><span class="txt" id="narrTxt"></span></div>
+
+  <aside class="panel" id="panel">
+    <h3 id="pTitle"></h3>
+    <p class="intro" id="intro"></p>
+    <div class="legend" id="legend"></div>
+    <ol class="log" id="log"></ol>
+    <div class="totals" id="totals">
+      <div><strong id="t1">0</strong><small id="l1"></small></div>
+      <div><strong id="t2">0</strong><small id="l2"></small></div>
+      <div><strong id="t3">0</strong><small id="l3"></small></div>
+    </div>
+    <div class="ctrls">
+      <button class="sq" id="prevBtn" type="button" aria-label="Previous step"></button>
+      <button class="primary" id="playBtn" type="button"></button>
+      <button class="sq" id="nextBtn" type="button" aria-label="Next step"></button>
+    </div>
+    <p class="hint" id="hint"></p>
+  </aside>
+</div>
+<script src="ea-impact.js"></script>
+</body>
+</html>

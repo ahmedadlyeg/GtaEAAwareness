@@ -51,7 +51,13 @@ window.EA_NONIT = {
       withoutTitle: "Without EA",
       withoutText: "The same knowledge is scattered across slides, spreadsheets, emails and people's memory, with no documented links. Each impact is hunted by hand, file by file.",
       withoutKpis: [["6 weeks", "of manual searching"], ["7", "impacts found"], ["11", "impacts missed"]],
-      close: "Same law, same organisation. The only difference is whether the map exists. The missed impacts do not disappear — they resurface later as defects, audit findings and rework."
+      close: "Same law, same organisation. The only difference is whether the map exists. The missed impacts do not disappear — they resurface later as defects, audit findings and rework.",
+      embed: {
+        heading: "See it for yourself",
+        lead: "Pick a scenario, then step through it or press Play to watch the impact trace itself.",
+        full: "Open full screen ↗",
+        links: [["without", "The 6-week manual search"], ["with", "Impact traced in minutes"]]
+      }
     },
     realize: {
       h: "How executives realise the benefit",
@@ -110,7 +116,13 @@ window.EA_NONIT = {
       withoutTitle: "بدون البنية المؤسسية",
       withoutText: "المعرفة نفسها مبعثرة بين العروض والجداول والبريد وذاكرة الموظفين، دون روابط موثّقة. ويُبحَث عن كل أثر يدويًا، ملفًا تلو الآخر.",
       withoutKpis: [["٦ أسابيع", "من البحث اليدوي"], ["٧", "آثار مكتشفة"], ["١١", "أثرًا مفقودًا"]],
-      close: "القانون نفسه، والمنظمة نفسها. الفرق الوحيد هو وجود الخريطة من عدمه. والآثار المفقودة لا تختفي — بل تعود لاحقًا كأعطال وملاحظات تدقيق وإعادة عمل."
+      close: "القانون نفسه، والمنظمة نفسها. الفرق الوحيد هو وجود الخريطة من عدمه. والآثار المفقودة لا تختفي — بل تعود لاحقًا كأعطال وملاحظات تدقيق وإعادة عمل.",
+      embed: {
+        heading: "شاهدها بنفسك",
+        lead: "اختر سيناريو، ثم تنقّل بين خطواته أو اضغط «تشغيل» لمشاهدة تتبّع الأثر.",
+        full: "ملء الشاشة ↗",
+        links: [["without", "البحث اليدوي الذي يستغرق ٦ أسابيع"], ["with", "تتبّع الأثر خلال دقائق"]]
+      }
     },
     realize: {
       h: "كيف تحقّق القيادة التنفيذية الفائدة",

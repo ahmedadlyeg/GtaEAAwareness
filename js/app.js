@@ -8,6 +8,7 @@
   var state = { user: null, progress: null, hb: null };
   var app = document.getElementById("app");
   var nonitLang = (function () { try { return localStorage.getItem("eahub.nonit.lang") === "ar" ? "ar" : "en"; } catch (e) { return "en"; } })();
+  var nonitExample = "without";
 
   // the TOGAF section counts as a (mandatory) module for progress and sign-off
   var TOGAF_MOD = { id: "togaf", n: "T", title: "TOGAF deep dive", short: "TOGAF deep dive", mandatory: true, virtual: true };
@@ -319,7 +320,8 @@
     function secH(h, lead) {
       return '<div class="sec-h"><div><h2>' + esc(h) + '</h2><div class="rule"></div></div>' + (lead ? "<p>" + esc(lead) + "</p>" : "") + "</div>";
     }
-    var ex = d.example;
+    var ex = d.example, emb = ex.embed;
+    var frameSrc = "examples/ea-impact.html#" + (rtl ? "ar-" : "") + nonitExample;
     var html =
       '<div class="nonit" dir="' + d.dir + '" lang="' + d.lang + '">' +
       phead(esc(d.eyebrow), esc(d.title), esc(d.sub), '<button class="btn btn-line" id="nonit-lang" type="button">' + esc(d.otherLabel) + "</button>") +
@@ -343,8 +345,23 @@
       '<div class="card" style="padding:24px;border-top:4px solid #2E8B57"><div class="eyebrow" style="color:#2E8B57">' + esc(ex.withTitle) + '</div><p style="margin-top:9px;font-size:15.5px;line-height:1.65">' + esc(ex.withText) + "</p>" + kpis(ex.withKpis, "#2E8B57") + "</div>" +
       '<div class="card" style="padding:24px;border-top:4px solid #C24A2C"><div class="eyebrow" style="color:#C24A2C">' + esc(ex.withoutTitle) + '</div><p style="margin-top:9px;font-size:15.5px;line-height:1.65">' + esc(ex.withoutText) + "</p>" + kpis(ex.withoutKpis, "#C24A2C") + "</div>" +
       "</div>" +
-      '<div class="strip" style="margin-top:18px;background:#33091F;border-radius:14px"><div class="in" style="padding:22px 26px"><p style="font-size:17px;line-height:1.6;color:#fff;margin:0">' + esc(ex.close) + "</p>" +
-      '<a class="btn btn-gold btn-sm" style="margin-top:14px" href="' + esc(d.slide.url) + '" target="_blank" rel="noopener">' + esc(d.slide.text) + " " + openLabel + "</a></div></div></div></section>" +
+      '<div class="strip" style="margin-top:18px;background:#33091F;border-radius:14px"><div class="in" style="padding:22px 26px"><p style="font-size:17px;line-height:1.6;color:#fff;margin:0">' + esc(ex.close) + "</p></div></div>" +
+      // embedded interactive slide + scenario sidebar
+      '<div style="margin-top:26px"><div class="sec-h"><div><h2 style="font-size:24px">' + esc(emb.heading) + '</h2><div class="rule"></div></div>' +
+      '<a class="btn btn-line btn-sm" id="ea-full" href="' + esc(frameSrc) + '" target="_blank" rel="noopener">' + esc(emb.full) + "</a></div>" +
+      '<p class="muted" style="margin:-4px 0 16px;font-size:15.5px">' + esc(emb.lead) + "</p>" +
+      '<div style="display:flex;gap:16px;flex-wrap:wrap;align-items:stretch">' +
+      '<div style="flex:0 0 240px;display:flex;flex-direction:column;gap:10px">' +
+      emb.links.map(function (lk) {
+        var v = lk[0], title = v === "with" ? ex.withTitle : ex.withoutTitle, accent = v === "with" ? "#2E8B57" : "#C24A2C", on = v === nonitExample;
+        return '<button type="button" class="ea-ex-link" data-ex="' + v + '" style="text-align:' + (rtl ? "right" : "left") + ';cursor:pointer;border:1.5px solid ' + (on ? "var(--m)" : "var(--line)") + ';background:' + (on ? "var(--m-blush)" : "#fff") + ';border-radius:12px;padding:14px 16px;box-shadow:inset ' + (rtl ? "-5px" : "5px") + ' 0 0 0 ' + accent + '">' +
+          '<div style="font-weight:800;font-size:16px;color:var(--ink)">' + esc(title) + "</div>" +
+          '<div style="font-size:13.5px;color:var(--muted);margin-top:3px">' + esc(lk[1]) + "</div></button>";
+      }).join("") +
+      "</div>" +
+      '<div style="flex:1 1 440px;min-width:300px"><div style="position:relative;width:100%;aspect-ratio:16/9;border-radius:14px;overflow:hidden;border:1px solid var(--line);background:#151B26">' +
+      '<iframe id="ea-frame" title="' + esc(ex.h) + '" src="' + esc(frameSrc) + '" style="position:absolute;inset:0;width:100%;height:100%;border:0"></iframe></div></div>' +
+      "</div></div></div></section>" +
       // How executives realise the benefit
       '<section class="section" style="padding-top:0"><div class="wrap">' + secH(d.realize.h) +
       '<div class="grid g2">' + d.realize.items.map(function (i) { return card(i.t, i.d); }).join("") + "</div></div></section>" +
@@ -356,6 +373,17 @@
         try { localStorage.setItem("eahub.nonit.lang", nonitLang); } catch (e) {}
         viewNonIT();
       };
+      var links = $$(".ea-ex-link");
+      function paint() { links.forEach(function (x) { var on = x.getAttribute("data-ex") === nonitExample; x.style.borderColor = on ? "var(--m)" : "var(--line)"; x.style.background = on ? "var(--m-blush)" : "#fff"; }); }
+      links.forEach(function (x) {
+        x.onclick = function () {
+          nonitExample = x.getAttribute("data-ex");
+          var src = "examples/ea-impact.html#" + (rtl ? "ar-" : "") + nonitExample;
+          var fr = $("#ea-frame"); if (fr) fr.src = src;
+          var fl = $("#ea-full"); if (fl) fl.href = src;
+          paint();
+        };
+      });
     });
   }
 
