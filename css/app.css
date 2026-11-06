@@ -8,6 +8,11 @@
 @font-face{font-family:"Tajawal";src:url("../fonts/Tajawal-Bold.ttf") format("truetype");font-weight:700;font-display:swap}
 @font-face{font-family:"Tajawal";src:url("../fonts/Tajawal-ExtraBold.ttf") format("truetype");font-weight:800;font-display:swap}
 
+/* Arabic content: GTA "Lusail" brand font where installed, Tajawal fallback.
+   letter-spacing is reset because Arabic is cursive — tracking breaks letter joining. */
+[lang="ar"]{font-family:"Lusail","Tajawal","Segoe UI",Tahoma,Arial,sans-serif}
+[lang="ar"] .eyebrow,[lang="ar"] .caps,[lang="ar"] .mono{font-family:"Lusail","Tajawal","Segoe UI",Tahoma,sans-serif;letter-spacing:0;text-transform:none}
+
 :root{
   --m:#89143C; --m-deep:#511C3C; --m-ink:#33091F; --m-2:#A8204F; --m-rose:#C46A8A; --m-blush:#F8EEF2; --m-blush2:#F1DEE6;
   --gold:#A29160; --gold-2:#C9B37A; --gold-soft:#F5F0E3;
